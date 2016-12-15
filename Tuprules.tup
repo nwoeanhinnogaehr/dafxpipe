@@ -4,14 +4,13 @@ CXX = g++
 LD = g++
 
 LDFLAGS += -ljackcpp -ljack
-LDFLAGS += -lboost_numpy-gcc54-mt-1_62
-LDFLAGS += -lboost_python-gcc54-mt-1_62
+LDFLAGS += -lboost_python-gcc54-mt-1_62 -lboost_numpy-gcc54-mt-1_62
 LDFLAGS += `python3-config --ldflags`
 
-CXXFLAGS += `python3-config --includes`
 CXXFLAGS += -I../boost_python/include
+CXXFLAGS += `python3-config --includes`
 CXXFLAGS += -g -std=c++11 -O2
-CXXFLAGS += -Wno-deprecated-declarations
+CXXFLAGS += -Wall -Wextra -Wno-deprecated-declarations
 
 !cxx = |> $(CXX) $(CXXFLAGS) -c %f -o %o |>
 !ld = |> $(LD) %f -o %o $(LDFLAGS) |>
