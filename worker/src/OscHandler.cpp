@@ -35,8 +35,4 @@ OscHandler::start()
 
     server.start();
     DBG_PRINT("Listening on " << server.url());
-
-    client.send("exec", "s", "import numpy as np\n"
-                             "def process(input, output):\n"
-                             "    output[:] = np.abs(input)\n");
 }
