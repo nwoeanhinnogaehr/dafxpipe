@@ -23,6 +23,7 @@ OscHandler::registerHandlers()
         if (argc != 1)
             return 1;
         std::string code(&argv[0]->s);
+        DBG_PRINT("Recv: " << code);
         proc->exec(code);
         return 0;
     });
