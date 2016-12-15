@@ -1,0 +1,7 @@
+include_rules
+
+EXE = worker
+
+: |> mkdir -p build |>
+: foreach src/*.cpp |> !cxx |> build/%B.o
+: build/*.o |> !ld |> $(EXE)
