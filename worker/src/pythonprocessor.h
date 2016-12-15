@@ -10,8 +10,8 @@ class PythonProcessor : public Processor
 {
   public:
     PythonProcessor();
-    virtual void process(int numInChannels, int numOutChannels, int frameSize,
-                         float** inBufs, float** outBufs) override;
+    virtual void process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
+                         float** outBufs) override;
 
   private:
     py::object main_module;

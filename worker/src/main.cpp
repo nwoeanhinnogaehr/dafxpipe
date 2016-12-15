@@ -17,6 +17,5 @@ main()
     client.connectFromPhysical(0, 0);
     client.connectFromPhysical(1, 1);
 
-    std::this_thread::sleep_until(
-      std::chrono::time_point<std::chrono::system_clock>::max());
+    std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 }
