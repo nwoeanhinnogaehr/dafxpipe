@@ -1,8 +1,9 @@
-#include "jackclient.h"
+#include "JackClient.h"
 
-JackClient::JackClient(Processor* processor)
-  : JackCpp::AudioIO("jackcpp-test", 2, 2)
+JackClient::JackClient(Processor* processor, int clientID)
+  : JackCpp::AudioIO("worker-" + std::to_string(clientID), 2, 2)
   , processor(processor)
+  , clientID(clientID)
 {
 }
 

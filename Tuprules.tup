@@ -4,8 +4,10 @@ CXX = g++
 LD = g++
 
 LDFLAGS += -ljackcpp -ljack
+LDFLAGS += -llo
 LDFLAGS += -lboost_python-gcc54-mt-1_62 -lboost_numpy-gcc54-mt-1_62
 LDFLAGS += `python3-config --ldflags`
+LDFLAGS += -g -std=c++11 -O2
 
 CXXFLAGS += -I../boost_python/include
 CXXFLAGS += `python3-config --includes`

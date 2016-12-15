@@ -1,21 +1,28 @@
-#include "jackclient.h"
-#include "pythonprocessor.h"
+#include "JackClient.h"
+#include "OscHandler.h"
+#include "PythonProcessor.h"
 #include <chrono>
+#include <iostream>
 #include <thread>
 
 int
-main()
+main(int argc, char** argv)
 {
-    // initial ports from constructor created here.
+    if (argc != 4) {
+        std::cout << "Usage: \n" << argv[0] << " ServerIP ServerPort ClientID\n";
+        return 0;
+    }
+    std::string serverIP(argv[1]);
+    int serverPort = std::stoi(argv[2]);
+    int clientID = std::stoi(argv[3]);
+
     PythonProcessor proc;
-    JackClient client(&proc);
-    client.start(); // activate the client
+    JackClient client(&proc, clientID);
+    OscHandler osc(serverIP, serverPort, serverPort + clientID + 1, &proc);
 
-    // connect our ports to physical ports
-    client.connectToPhysical(0, 0);
-    client.connectToPhysical(1, 1);
-    client.connectFromPhysical(0, 0);
-    client.connectFromPhysical(1, 1);
+    client.start();
+    osc.start();
 
+    // sleep forever
     std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 }

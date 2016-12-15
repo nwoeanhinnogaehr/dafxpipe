@@ -1,4 +1,5 @@
-#include "pythonprocessor.h"
+#include "PythonProcessor.h"
+#include "debug.h"
 #include <iostream>
 
 PythonProcessor::PythonProcessor()
@@ -10,10 +11,20 @@ PythonProcessor::PythonProcessor()
         main_module = py::import("__main__");
         main_namespace = main_module.attr("__dict__");
 
-        exec("import numpy\n"
-             "def process(input, output):\n"
-             "    output[:] = numpy.abs(input)\n",
-             main_namespace);
+    } catch (py::error_already_set const&) {
+        std::cerr << "Python init error:" << std::endl;
+        PyErr_Print();
+    }
+}
+
+void
+PythonProcessor::exec(std::string code)
+{
+    try {
+        py::exec(code.c_str(), main_namespace);
+        if (!((py::dict)main_namespace).has_key("process")) {
+            DBG_PRINT("No process function defined!");
+        }
     } catch (py::error_already_set const&) {
         std::cerr << "Python init error:" << std::endl;
         PyErr_Print();
@@ -24,6 +35,9 @@ void
 PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
                          float** outBufs)
 {
+    if (!((py::dict)main_namespace).has_key("process"))
+        return;
+
     // alloc & copy data in
     float* inData = new float[numInChannels * frameSize];
     float* outData = new float[numOutChannels * frameSize];

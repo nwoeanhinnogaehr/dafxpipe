@@ -1,6 +1,6 @@
 #pragma once
 
-#include "processor.h"
+#include "Processor.h"
 #include <boost/python/numpy.hpp>
 
 namespace py = boost::python;
@@ -12,6 +12,7 @@ class PythonProcessor : public Processor
     PythonProcessor();
     virtual void process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
                          float** outBufs) override;
+    void exec(std::string code);
 
   private:
     py::object main_module;
