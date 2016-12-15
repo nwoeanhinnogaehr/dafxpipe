@@ -26,7 +26,7 @@ PythonProcessor::exec(std::string code)
             DBG_PRINT("No process function defined!");
         }
     } catch (py::error_already_set const&) {
-        std::cerr << "Python init error:" << std::endl;
+        std::cerr << "Python exec error:" << std::endl;
         PyErr_Print();
     }
 }
