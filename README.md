@@ -6,6 +6,12 @@
 * [jackcpp](http://www.x37v.info/projects/jackcpp/)
 * [tup](http://gittup.org/tup/)
 
+# build
+
+```
+$ tup
+```
+
 # license
 
 GPL
