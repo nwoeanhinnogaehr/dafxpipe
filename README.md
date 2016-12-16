@@ -26,7 +26,7 @@ That's about it for now. You should be able to do some cool stuff if you import 
 * [Boost.Python ≥ 1.6.3](https://github.com/boostorg/python)
 * [JACK](http://www.jackaudio.org/)
 * [jackcpp](http://www.x37v.info/projects/jackcpp/)
-* [liblo](http://liblo.sourceforge.net/)
+* [liblo ≥ 3713b9](http://liblo.sourceforge.net/)
 * [pyliblo](http://das.nasophon.de/pyliblo/)
 * [neovim](https://neovim.io/)
 * [GTK+ 3](https://www.gtk.org/)
