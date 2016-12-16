@@ -2,6 +2,7 @@
 
 #include "Processor.h"
 #include <boost/python/numpy.hpp>
+#include <mutex>
 
 namespace py = boost::python;
 namespace np = boost::python::numpy;
@@ -17,4 +18,5 @@ class PythonProcessor : public Processor
   private:
     py::object main_module;
     py::object main_namespace;
+    std::mutex python_mutex;
 };
