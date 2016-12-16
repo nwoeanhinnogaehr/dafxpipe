@@ -42,7 +42,7 @@ def make_pane():
     terminal.spawn_sync(
             Vte.PtyFlags.DEFAULT,
             os.getcwd(),
-            ["../worker/worker", "localhost", "9000", str(num_panes)],
+            [os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "localhost", "9000", str(num_panes)],
             [],
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
