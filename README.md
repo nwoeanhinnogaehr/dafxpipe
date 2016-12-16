@@ -9,6 +9,7 @@ For each tab you open, a JACK device will be created. The bottom window is the c
 * F4 will execute the current "paragraph" (delimited by blank lines).
 * F5 will execute the current line or the current visual selection.
 * F6 will execute the whole file.
+* F12 will silence output.
 
 If you define a function like so:
 ```python

@@ -14,6 +14,7 @@ class PythonProcessor : public Processor
     virtual void process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
                          float** outBufs) override;
     void exec(std::string code);
+    void silence();
 
   private:
     py::object main_module;

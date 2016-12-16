@@ -27,6 +27,12 @@ OscHandler::registerHandlers()
         proc->exec(code);
         return 0;
     });
+
+    server.add_method("silence", "", [this]() {
+        DBG_PRINT("Silence");
+        proc->silence();
+        return 0;
+    });
 }
 
 void

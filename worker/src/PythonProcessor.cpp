@@ -38,6 +38,14 @@ PythonProcessor::exec(std::string code)
 }
 
 void
+PythonProcessor::silence()
+{
+    std::lock_guard<std::mutex> lock(python_mutex);
+    if (((py::dict)main_namespace).has_key("process"))
+        py::api::delitem(main_namespace, "process");
+}
+
+void
 PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
                          float** outBufs)
 {
