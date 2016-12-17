@@ -88,7 +88,7 @@ PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, f
     }
 
     // copy data out & clean up
-    for (int i = 0; i < numInChannels; i++)
+    for (int i = 0; i < numOutChannels; i++)
         std::copy(outData + i * frameSize, outData + (i + 1) * frameSize, outBufs[i]);
     delete[] inData;
     delete[] outData;
