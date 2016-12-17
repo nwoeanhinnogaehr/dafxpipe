@@ -5,6 +5,12 @@
 PythonProcessor::PythonProcessor()
 {
     try {
+        // set PYTHONPATH for convenience
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        DBG_PRINT("PYTHONPATH=" << cwd);
+        setenv("PYTHONPATH", cwd, true);
+
         Py_Initialize();
         np::initialize();
 
