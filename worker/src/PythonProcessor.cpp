@@ -43,6 +43,9 @@ PythonProcessor::PythonProcessor(int port, char* argv0)
         np::initialize();
         PyEval_InitThreads();
 
+        wchar_t* argv[1] { programName };
+        PySys_SetArgv(1, argv);
+
         main_module = py::import("__main__");
         main_namespace = main_module.attr("__dict__");
 
