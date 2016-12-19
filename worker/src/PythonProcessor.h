@@ -10,13 +10,15 @@ namespace np = boost::python::numpy;
 class PythonProcessor : public Processor
 {
   public:
-    PythonProcessor();
+    PythonProcessor(int port, char *argv0);
     virtual void process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
                          float** outBufs) override;
+    void setupAPI();
     void exec(std::string code);
     void silence();
 
   private:
+    int port;
     py::object main_module;
     py::object main_namespace;
     std::mutex python_mutex;

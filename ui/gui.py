@@ -10,6 +10,8 @@ from neovim import attach
 import threading
 import time
 import liblo
+import grpc
+import worker_pb2
 
 win = Gtk.Window()
 win.connect('delete-event', Gtk.main_quit)
@@ -42,8 +44,8 @@ def make_pane():
     terminal.spawn_sync(
             Vte.PtyFlags.DEFAULT,
             os.getcwd(),
-            # ["/usr/bin/gdb", "--args", os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "localhost", "9000", str(num_panes)],
-            [os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "localhost", "9000", str(num_panes)],
+            #["/usr/bin/gdb", "--args", os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "127.0.0.1", str(9000 + num_panes)],
+            [os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "127.0.0.1", str(9000 + num_panes)],
             [],
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -70,6 +72,7 @@ def setup_nvim(id):
     nvim_socket = "/tmp/nvim_worker_" + str(id)
     nvim = attach('socket', path=nvim_socket)
     nvim.command('set filetype=python')
+    nvim.command('cd ..')
     nvim.command('noremap <F4> mmvipy:call rpcnotify(%d, "exec")<CR>`m' % nvim.channel_id)
     nvim.command('inoremap <F4> mmvipy:call rpcnotify(%d, "exec")<CR>`m' % nvim.channel_id)
     nvim.command('inoremap <F5> <Esc>yy:call rpcnotify(%d, "exec")<CR>a' % nvim.channel_id)
@@ -78,15 +81,18 @@ def setup_nvim(id):
     nvim.command('inoremap <F6> mmggyG:call rpcnotify(%d, "exec")<CR>`m' % nvim.channel_id)
     nvim.command('noremap <F6> mmggyG:call rpcnotify(%d, "exec")<CR>`m' % nvim.channel_id)
     nvim.command('noremap <F12> :call rpcnotify(%d, "silence")<CR>' % nvim.channel_id)
-    addr = liblo.Address("localhost", 9000 + id + 1, liblo.UDP)
+    channel = grpc.insecure_channel('localhost:' + str(9000 + id))
+    stub = worker_pb2.WorkerStub(channel)
+    stub.SetupAPI(worker_pb2.Empty())
     while True:
         event = nvim.next_message()
         if len(event) == 3:
             if event[1] == "exec":
                 code = nvim.funcs.getreg('*')
-                liblo.send(addr, "exec", code)
+                stub.Exec(worker_pb2.Code(code=code))
             elif event[1] == "silence":
-                liblo.send(addr, "silence")
+                stub.Silence(worker_pb2.Empty())
+                pass
 
 
 def add_pane(a, b, c=None):

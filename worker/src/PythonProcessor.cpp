@@ -2,23 +2,46 @@
 #include "debug.h"
 #include <iostream>
 
-PythonProcessor::PythonProcessor()
+struct AcquireGIL
+{
+    AcquireGIL()
+    {
+        if (!PyGILState_Check()) {
+            tstate = PyEval_SaveThread();
+            gstate = PyGILState_Ensure();
+        }
+    }
+    ~AcquireGIL()
+    {
+        if (gstate && tstate) {
+            PyGILState_Release(gstate);
+            PyEval_RestoreThread(tstate);
+        }
+    }
+
+  private:
+    PyThreadState* tstate;
+    PyGILState_STATE gstate;
+};
+
+PythonProcessor::PythonProcessor(int port, char* argv0)
+  : port(port)
 {
     try {
         // set PYTHONPATH for convenience
         char cwd[1024];
         getcwd(cwd, sizeof(cwd));
+        std::string pythonpath(cwd);
         DBG_PRINT("PYTHONPATH=" << cwd);
         setenv("PYTHONPATH", cwd, true);
 
+        // Some libs require that this is set
+        wchar_t* programName = Py_DecodeLocale(argv0, NULL);
+        Py_SetProgramName(programName);
+
         Py_Initialize();
         np::initialize();
-
-        // Some libs require that this is set
-        wchar_t progname[4];
-        mbstowcs(progname, "lpj", 4);
-        wchar_t *argv[1] = {progname};
-        PySys_SetArgv(1, argv);
+        PyEval_InitThreads();
 
         main_module = py::import("__main__");
         main_namespace = main_module.attr("__dict__");
@@ -30,9 +53,27 @@ PythonProcessor::PythonProcessor()
 }
 
 void
+PythonProcessor::setupAPI()
+{
+    std::lock_guard<std::mutex> lock(python_mutex);
+    AcquireGIL gil;
+    try {
+        py::object worker_module = py::import("worker");
+        py::object worker_namespace = main_module.attr("__dict__");
+        worker_module.attr("__worker_port") = port;
+        worker_module.attr("init")();
+        main_namespace["worker"] = worker_module;
+    } catch (py::error_already_set const&) {
+        std::cerr << "Python API init error:" << std::endl;
+        PyErr_Print();
+    }
+}
+
+void
 PythonProcessor::exec(std::string code)
 {
     std::lock_guard<std::mutex> lock(python_mutex);
+    AcquireGIL gil;
     try {
         py::exec(code.c_str(), main_namespace);
         if (!((py::dict)main_namespace).has_key("process"))
@@ -47,6 +88,7 @@ void
 PythonProcessor::silence()
 {
     std::lock_guard<std::mutex> lock(python_mutex);
+    AcquireGIL gil;
     if (((py::dict)main_namespace).has_key("process"))
         py::api::delitem(main_namespace, "process");
 }
@@ -55,9 +97,15 @@ void
 PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
                          float** outBufs)
 {
+    // Clear possibly uninitialized output buffer
+    for (int i = 0; i < numOutChannels; i++)
+        std::fill(outBufs[i], outBufs[i] + frameSize, 0);
+
     // Don't process during exec
     if (!python_mutex.try_lock())
         return;
+
+    AcquireGIL gil;
 
     if (!((py::dict)main_namespace).has_key("process")) {
         python_mutex.unlock();

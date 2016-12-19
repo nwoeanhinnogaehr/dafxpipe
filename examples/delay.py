@@ -2,7 +2,7 @@
 import numpy as np
 from queuebuffer import QueueBuffer
 
-delay = 1<<16
+delay = 1<<18
 f = QueueBuffer((2, delay), np.float32, 1)
 b = QueueBuffer((2, delay), np.float32, 1)
 

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+service Worker {
+    rpc SetupAPI(Empty) returns (Empty) {}
+    rpc Exec(Code) returns (Empty) {}
+    rpc Silence(Empty) returns (Empty) {}
+    rpc SetNumInputs(NumChannels) returns (Empty) {}
+    rpc SetNumOutputs(NumChannels) returns (Empty) {}
+    rpc GetNumInputs(Empty) returns (NumChannels) {}
+    rpc GetNumOutputs(Empty) returns (NumChannels) {}
+}
+
+message Code {
+    string code = 1;
+}
+
+message NumChannels {
+    int32 num = 1;
+}
+
+message Empty {
+
+}

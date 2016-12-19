@@ -9,6 +9,8 @@ class JackClient : public JackCpp::AudioIO
     JackClient(Processor* processor, int clientID);
 
     virtual int audioCallback(jack_nframes_t nframes, audioBufVector inBufs, audioBufVector outBufs) override;
+    void setNumInputs(unsigned num);
+    void setNumOutputs(unsigned num);
 
   private:
     Processor* processor;

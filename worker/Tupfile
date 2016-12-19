@@ -2,6 +2,22 @@ include_rules
 
 EXE = worker
 
+LDFLAGS += `python3-config --ldflags`
+LDFLAGS += -ljackcpp -ljack
+LDFLAGS += `pkg-config --libs grpc++ grpc` -lprotobuf
+LDFLAGS += -lboost_python -lboost_numpy
+LDFLAGS += -g -std=c++11 -O2
+
+CXXFLAGS += `python3-config --includes`
+CXXFLAGS += -g -std=c++11 -O2
+CXXFLAGS += -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter
+
 : |> mkdir -p build |>
-: foreach src/*.cpp |> !cxx |> build/%B.o
+: foreach src/*.proto |> \
+    protoc -I src --grpc_out=src --cpp_out=src --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` %f |> \
+    src/%B.grpc.pb.h src/%B.grpc.pb.cc src/%B.pb.h src/%B.pb.cc
+: foreach src/*.proto |> \
+    python -m grpc.tools.protoc -I src --python_out=../ui --grpc_python_out=../ui %f |> \
+    ../ui/%B_pb2.py ../ui/%B_pb2_grpc.py
+: foreach src/*.cpp src/*.cc | src/*.h |> !cxx |> build/%B.o
 : build/*.o |> !ld |> $(EXE)
