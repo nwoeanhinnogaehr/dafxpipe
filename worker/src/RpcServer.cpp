@@ -4,7 +4,6 @@
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <iostream>
 #include <string>
 #include <thread>
 
@@ -65,7 +64,7 @@ RpcServer::RpcServer(std::string host, int port, PythonProcessor* proc, JackClie
         grpc::ServerBuilder builder;
         builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
         builder.RegisterService(&service);
-        std::cout << "Listening on " << server_address << std::endl;
+        DBG_PRINT("Listening on " << server_address);
         std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
         server->Wait();
     }).detach();
