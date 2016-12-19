@@ -7,15 +7,14 @@ def init():
     channel = grpc.insecure_channel('localhost:' + str(__worker_port))
     worker = WorkerStub(channel)
 
-# we start these on a thread as a deadlock workaround
-# because calling these methods goes C++ -> Python -> C++ -> Python
+# we start this on a thread as a deadlock workaround
+# because calling this method goes C++ -> Python -> C++ -> Python
 # and that doesn't play nice with the locks we have to prevent data races.
-# we should find some other way to prevent the deadlock
-# because this won't allow us to return data from RPC calls.
-
+# we should perhaps find some other way to prevent the deadlock.
 def silence():
     threading.Thread(target=worker.Silence, args=(Empty(),)).start()
+
 def setNumInputs(num):
-    threading.Thread(target=worker.SetNumInputs, args=(NumChannels(num=num),)).start()
+    worker.SetNumInputs(NumChannels(num=num))
 def setNumOutputs(num):
-    threading.Thread(target=worker.SetNumOutputs, args=(NumChannels(num=num),)).start()
+    worker.SetNumOutputs(NumChannels(num=num))
