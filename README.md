@@ -2,7 +2,9 @@
 
 Software for live coding audio effects in Python. (again)
 
-There's a GUI! After building (see below), run it with `python3 gui/main.py`.
+Take a look at the [examples](examples/).
+
+There's a GUI! After building (see below), run it with `./gui.sh`.
 
 For each tab you open, a JACK device will be created. The bottom window is the console for viewing error messages. The top window is your workspace. Some keys are mapped for you:
 
@@ -26,12 +28,11 @@ That's about it for now. You should be able to do some cool stuff if you import 
 * [NumPy](http://www.numpy.org/)
 * [Boost.Python ≥ 1.6.3](https://github.com/boostorg/python)
 * [JACK](http://www.jackaudio.org/)
-* [jackcpp](http://www.x37v.info/projects/jackcpp/)
-* [liblo ≥ 3713b9](http://liblo.sourceforge.net/)
-* [pyliblo](http://das.nasophon.de/pyliblo/)
+* [my fork of jackcpp (merged soon hopefully)](https://github.com/nwoeanhinnogaehr/jackcpp)
 * [neovim](https://neovim.io/)
 * [GTK+ 3](https://www.gtk.org/)
 * [PyGObject](https://wiki.gnome.org/Projects/PyGObject)
+* [grpc](http://www.grpc.io/)
 * [tup](http://gittup.org/tup/)
 
 # build
