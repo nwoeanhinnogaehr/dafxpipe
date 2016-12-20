@@ -16,7 +16,7 @@ outq = QueueBuffer((2, fftsize), np.float32, 1)
 def process(i, o):
     inq.push(i)
     if inq.size >= fftsize:
-        fft_in = inq.read(fftsize)
+        fft_in = inq.peek(fftsize)
         inq.pop(hop)
         fft_in *= np.hanning(fftsize)
         spec = np.fft.rfft(fft_in, norm='ortho')
