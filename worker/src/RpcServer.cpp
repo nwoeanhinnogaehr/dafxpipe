@@ -24,8 +24,9 @@ class WorkerImpl : public Worker::Service
     }
     grpc::Status Exec(grpc::ServerContext*, const Code* req, Empty*) override
     {
-        DBG_PRINT("Exec\n----\n" << req->code() << "----");
+        DBG_PRINT("Exec...");
         proc->exec(req->code());
+        DBG_PRINT("OK.");
         return grpc::Status::OK;
     }
     grpc::Status Silence(grpc::ServerContext*, const Empty*, Empty*) override
