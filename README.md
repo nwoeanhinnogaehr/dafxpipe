@@ -1,10 +1,10 @@
 # what is this?
 
-Software for live coding audio effects in Python. (again)
+Software for live coding audio effects and synths in Python. (again)
 
 Take a look at the [examples](examples/).
 
-There's a GUI! After building (see below), run it with `./gui.sh`.
+There's a GUI! After building (see below), run it with `./gui`.
 
 For each tab you open, a JACK device will be created. The bottom window is the console for viewing error messages. The top window is your workspace. Some keys are mapped for you:
 
@@ -19,8 +19,6 @@ def process(input, output):
   output[:] = input
 ```
 and attach something to the JACK ports, you should hear the audio flowing through. `input` and `output` are NumPy arrays with shape `(num_channels, buffer_size)`.
-
-That's about it for now. You should be able to do some cool stuff if you import something like [librosa](http://librosa.github.io/librosa/effects.html).
 
 # dependencies
 
