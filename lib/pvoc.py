@@ -1,6 +1,5 @@
 import numpy as np
 import worker
-worker.init()
 
 def to_polar(x):
     """
