@@ -18,3 +18,13 @@ def setNumInputs(num):
     worker.SetNumInputs(NumChannels(num=num))
 def setNumOutputs(num):
     worker.SetNumOutputs(NumChannels(num=num))
+
+def getNumInputs():
+    return worker.GetNumInputs(Empty()).num
+def getNumOutputs():
+    return worker.GetNumOutputs(Empty()).num
+
+def getSampleRate():
+    return worker.GetSampleRate(Empty()).rate
+def getBufferSize():
+    return worker.GetBufferSize(Empty()).size

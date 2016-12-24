@@ -32,8 +32,9 @@ PythonProcessor::PythonProcessor(int port, char* argv0)
         char cwd[1024];
         getcwd(cwd, sizeof(cwd));
         std::string pythonpath(cwd);
-        DBG_PRINT("PYTHONPATH=" << cwd);
-        setenv("PYTHONPATH", cwd, true);
+        pythonpath += "/lib/";
+        DBG_PRINT("PYTHONPATH=" << pythonpath);
+        setenv("PYTHONPATH", pythonpath.c_str(), true);
 
         // Some libs require that this is set
         wchar_t* programName = Py_DecodeLocale(argv0, NULL);

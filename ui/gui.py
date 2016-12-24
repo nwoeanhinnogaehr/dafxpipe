@@ -11,12 +11,11 @@ import threading
 import time
 import liblo
 import grpc
-import worker_pb2
+import lib.worker_pb2 as worker_pb2
 
 win = Gtk.Window()
 win.connect('delete-event', Gtk.main_quit)
 
-global num_panes
 num_panes = 0
 
 def make_pane():
@@ -72,7 +71,6 @@ def setup_nvim(id):
     nvim_socket = "/tmp/nvim_worker_" + str(id)
     nvim = attach('socket', path=nvim_socket)
     nvim.command('set filetype=python')
-    nvim.command('cd ..')
     nvim.command('noremap <F4> mmvipy:call rpcnotify(%d, "exec")<CR>`m' % nvim.channel_id)
     nvim.command('inoremap <F4> <Esc>mmvipy:call rpcnotify(%d, "exec")<CR>`ma' % nvim.channel_id)
     nvim.command('inoremap <F5> <Esc>yy:call rpcnotify(%d, "exec")<CR>a' % nvim.channel_id)
