@@ -8,6 +8,8 @@ service Worker {
     rpc SetNumOutputs(NumChannels) returns (Empty) {}
     rpc GetNumInputs(Empty) returns (NumChannels) {}
     rpc GetNumOutputs(Empty) returns (NumChannels) {}
+    rpc GetSampleRate(Empty) returns (SampleRate) {}
+    rpc GetBufferSize(Empty) returns (BufferSize) {}
 }
 
 message Code {
@@ -15,7 +17,15 @@ message Code {
 }
 
 message NumChannels {
-    int32 num = 1;
+    uint32 num = 1;
+}
+
+message BufferSize {
+    uint32 size = 1;
+}
+
+message SampleRate {
+    float rate = 1;
 }
 
 message Empty {

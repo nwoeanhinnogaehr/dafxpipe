@@ -51,6 +51,26 @@ class WorkerImpl : public Worker::Service
         jack->start();
         return grpc::Status::OK;
     }
+    grpc::Status GetNumInputs(grpc::ServerContext*, const Empty*, NumChannels* resp) override
+    {
+        resp->set_num(jack->inPorts());
+        return grpc::Status::OK;
+    }
+    grpc::Status GetNumOutputs(grpc::ServerContext*, const Empty*, NumChannels* resp) override
+    {
+        resp->set_num(jack->outPorts());
+        return grpc::Status::OK;
+    }
+    grpc::Status GetSampleRate(grpc::ServerContext*, const Empty*, SampleRate* resp) override
+    {
+        resp->set_rate(jack->getSampleRate());
+        return grpc::Status::OK;
+    }
+    grpc::Status GetBufferSize(grpc::ServerContext*, const Empty*, BufferSize* resp) override
+    {
+        resp->set_size(jack->getBufferSize());
+        return grpc::Status::OK;
+    }
 
   private:
     PythonProcessor* proc;
