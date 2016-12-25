@@ -18,8 +18,11 @@ class PythonProcessor : public Processor
     void silence();
 
   private:
+    void saveNamespace();
+    void restoreNamespace();
+
     int port;
-    py::object main_module;
-    py::object main_namespace;
-    std::mutex python_mutex;
+    py::object mainModule;
+    py::object mainNamespace, lastMainNamespace;
+    std::mutex pythonMutex;
 };

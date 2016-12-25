@@ -44,12 +44,13 @@ PythonProcessor::PythonProcessor(int port, char* argv0)
         np::initialize();
         PyEval_InitThreads();
 
-        wchar_t* argv[1] { programName };
+        wchar_t* argv[1]{ programName };
         PySys_SetArgv(1, argv);
 
-        main_module = py::import("__main__");
-        main_namespace = main_module.attr("__dict__");
+        mainModule = py::import("__main__");
+        mainNamespace = mainModule.attr("__dict__");
 
+        saveNamespace();
     } catch (py::error_already_set const&) {
         std::cerr << "Python init error:" << std::endl;
         PyErr_Print();
@@ -59,14 +60,13 @@ PythonProcessor::PythonProcessor(int port, char* argv0)
 void
 PythonProcessor::setupAPI()
 {
-    std::lock_guard<std::mutex> lock(python_mutex);
+    std::lock_guard<std::mutex> lock(pythonMutex);
     AcquireGIL gil;
     try {
-        py::object worker_module = py::import("worker");
-        py::object worker_namespace = main_module.attr("__dict__");
-        worker_module.attr("__worker_port") = port;
-        worker_module.attr("init")();
-        main_namespace["worker"] = worker_module;
+        py::object workerModule = py::import("worker");
+        workerModule.attr("__worker_port") = port;
+        workerModule.attr("init")();
+        mainNamespace["worker"] = workerModule;
     } catch (py::error_already_set const&) {
         std::cerr << "Python API init error:" << std::endl;
         PyErr_Print();
@@ -76,25 +76,26 @@ PythonProcessor::setupAPI()
 void
 PythonProcessor::exec(std::string code)
 {
-    std::lock_guard<std::mutex> lock(python_mutex);
+    std::lock_guard<std::mutex> lock(pythonMutex);
     AcquireGIL gil;
     try {
-        py::exec(code.c_str(), main_namespace);
-        if (!((py::dict)main_namespace).has_key("process"))
+        py::exec(code.c_str(), mainNamespace);
+        if (!((py::dict)mainNamespace).has_key("process"))
             DBG_PRINT("No process function defined!");
     } catch (py::error_already_set const&) {
         std::cerr << "Python exec error:" << std::endl;
         PyErr_Print();
+        restoreNamespace();
     }
 }
 
 void
 PythonProcessor::silence()
 {
-    std::lock_guard<std::mutex> lock(python_mutex);
+    std::lock_guard<std::mutex> lock(pythonMutex);
     AcquireGIL gil;
-    if (((py::dict)main_namespace).has_key("process"))
-        py::api::delitem(main_namespace, "process");
+    if (((py::dict)mainNamespace).has_key("process"))
+        py::api::delitem(mainNamespace, "process");
 }
 
 void
@@ -106,13 +107,13 @@ PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, f
         std::fill(outBufs[i], outBufs[i] + frameSize, 0);
 
     // Don't process during exec
-    if (!python_mutex.try_lock())
+    if (!pythonMutex.try_lock())
         return;
 
     AcquireGIL gil;
 
-    if (!((py::dict)main_namespace).has_key("process")) {
-        python_mutex.unlock();
+    if (!((py::dict)mainNamespace).has_key("process")) {
+        pythonMutex.unlock();
         return;
     }
 
@@ -132,11 +133,15 @@ PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, f
                         py::make_tuple(sizeof(float) * frameSize, sizeof(float)), py::object());
 
         // do processing
-        py::object processFn = main_namespace["process"];
+        py::object processFn = mainNamespace["process"];
         processFn(pyInput, pyOutput);
+
+        // save known working config
+        saveNamespace();
     } catch (py::error_already_set const&) {
         std::cerr << "Python process error:" << std::endl;
         PyErr_Print();
+        restoreNamespace();
     }
 
     // copy data out & clean up
@@ -145,5 +150,18 @@ PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, f
     delete[] inData;
     delete[] outData;
 
-    python_mutex.unlock();
+    pythonMutex.unlock();
+}
+
+void
+PythonProcessor::saveNamespace()
+{
+    static py::object copyFn = py::import("copy").attr("copy");
+    lastMainNamespace = copyFn(mainNamespace);
+}
+
+void
+PythonProcessor::restoreNamespace()
+{
+    mainNamespace = lastMainNamespace;
 }
