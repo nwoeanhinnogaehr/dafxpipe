@@ -8,7 +8,7 @@ class STFT:
         self.channels = channels
         self.overlap = overlap
         self.hop = self.size // overlap
-        bufSize = max(size, worker.getBufferSize())
+        bufSize = max(size, worker.getBufferSize() * 2)
         self.inq = QueueBuffer((channels, bufSize), np.float32, 1)
         self.outq = QueueBuffer((channels, bufSize), np.float32, 1)
         self.window = np.sqrt(np.hanning(size))
