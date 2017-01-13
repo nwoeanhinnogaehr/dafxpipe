@@ -58,7 +58,7 @@ PythonProcessor::PythonProcessor(int port, char* argv0)
 }
 
 void
-PythonProcessor::setupAPI()
+PythonProcessor::init()
 {
     std::lock_guard<std::mutex> lock(pythonMutex);
     AcquireGIL gil;

@@ -10,7 +10,7 @@
 class WorkerImpl : public Worker::Service
 {
   public:
-    WorkerImpl(PythonProcessor* proc, JackClient* jack)
+    WorkerImpl(Processor* proc, JackClient* jack)
       : proc(proc)
       , jack(jack)
     {
@@ -19,7 +19,7 @@ class WorkerImpl : public Worker::Service
     grpc::Status SetupAPI(grpc::ServerContext*, const Empty*, Empty*) override
     {
         DBG_PRINT("API Init");
-        proc->setupAPI();
+        proc->init();
         return grpc::Status::OK;
     }
     grpc::Status Exec(grpc::ServerContext*, const Code* req, Empty*) override
@@ -73,11 +73,11 @@ class WorkerImpl : public Worker::Service
     }
 
   private:
-    PythonProcessor* proc;
+    Processor* proc;
     JackClient* jack;
 };
 
-RpcServer::RpcServer(std::string host, int port, PythonProcessor* proc, JackClient* jack)
+RpcServer::RpcServer(std::string host, int port, Processor* proc, JackClient* jack)
 {
     std::thread([=]() {
         std::string server_address(host + ":" + std::to_string(port));

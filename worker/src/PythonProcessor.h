@@ -13,9 +13,9 @@ class PythonProcessor : public Processor
     PythonProcessor(int port, char *argv0);
     virtual void process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
                          float** outBufs) override;
-    void setupAPI();
-    void exec(std::string code);
-    void silence();
+    virtual void init() override;
+    virtual void exec(std::string code) override;
+    virtual void silence() override;
 
   private:
     void saveNamespace();
