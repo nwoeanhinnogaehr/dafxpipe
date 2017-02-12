@@ -9,7 +9,6 @@ import os
 from neovim import attach
 import threading
 import time
-import liblo
 import grpc
 import lib.worker_pb2 as worker_pb2
 
@@ -18,7 +17,7 @@ win.connect('delete-event', Gtk.main_quit)
 
 num_panes = 0
 
-def make_pane():
+def make_pane(language):
     global num_panes
     paned = Gtk.Paned.new(Gtk.Orientation.VERTICAL)
 
@@ -43,8 +42,8 @@ def make_pane():
     terminal.spawn_sync(
             Vte.PtyFlags.DEFAULT,
             os.getcwd(),
-            #["/usr/bin/gdb", "--args", os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "127.0.0.1", str(9000 + num_panes)],
-            [os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "127.0.0.1", str(9000 + num_panes)],
+            #["/usr/bin/gdb", "--args", os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "127.0.0.1", str(9000 + num_panes), language],
+            [os.path.dirname(os.path.realpath(__file__)) + "/../worker/worker", "127.0.0.1", str(9000 + num_panes), language],
             [],
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -66,11 +65,11 @@ add_button.show_all()
 notebook = Gtk.Notebook()
 notebook.set_action_widget(add_button, Gtk.PackType.END)
 
-def setup_nvim(id):
-    time.sleep(1)
+def setup_nvim(id,language):
+    time.sleep(4)
     nvim_socket = "/tmp/nvim_worker_" + str(id)
     nvim = attach('socket', path=nvim_socket)
-    nvim.command('set filetype=python')
+    nvim.command('set filetype=' + language)
     nvim.command('noremap <F4> mmvipy:call rpcnotify(%d, "exec")<CR>`m' % nvim.channel_id)
     nvim.command('inoremap <F4> <Esc>mmvipy:call rpcnotify(%d, "exec")<CR>`ma' % nvim.channel_id)
     nvim.command('inoremap <F5> <Esc>yy:call rpcnotify(%d, "exec")<CR>a' % nvim.channel_id)
@@ -80,39 +79,74 @@ def setup_nvim(id):
     nvim.command('noremap <F6> mmggyG:call rpcnotify(%d, "exec")<CR>`m' % nvim.channel_id)
     nvim.command('noremap <F12> :call rpcnotify(%d, "silence")<CR>' % nvim.channel_id)
     nvim.command('inoremap <F12> <Esc>:call rpcnotify(%d, "silence")<CR>a' % nvim.channel_id)
+    nvim.command('noremap <F11> :call rpcnotify(%d, "clearBuffer")<CR>' % nvim.channel_id)
+    nvim.command('inoremap <F11> <Esc>:call rpcnotify(%d, "clearBuffer")<CR>a' % nvim.channel_id)
     channel = grpc.insecure_channel('localhost:' + str(9000 + id))
     stub = worker_pb2.WorkerStub(channel)
     stub.SetupAPI(worker_pb2.Empty())
-    while True:
-        event = nvim.next_message()
-        if len(event) == 3:
-            if event[1] == "exec":
-                code = nvim.funcs.getreg('*')
-                stub.Exec(worker_pb2.Code(code=code))
-            elif event[1] == "silence":
-                stub.Silence(worker_pb2.Empty())
-                pass
+    try:
+        while True:
+            event = nvim.next_message()
+            if len(event) == 3:
+                if event[1] == "exec":
+                    code = nvim.funcs.getreg('*')
+                    stub.Exec(worker_pb2.Code(code=code))
+                elif event[1] == "silence":
+                    stub.Silence(worker_pb2.Empty())
+                elif event[1] == "clearBuffer":
+                    stub.ClearBuffer(worker_pb2.Empty())
+    except:
+        pass
 
-
-def add_pane(a, b, c=None):
+def add_pane(item, a, b=None):
+    language = item.get_label()
     id = notebook.get_n_pages()
     id = num_panes
-    pane = make_pane()
-    notebook.append_page(pane, Gtk.Label(str(id)))
+    pane = make_pane(language)
+    label = Gtk.HBox()
+    label.pack_start(Gtk.Label(language + "-" + str(id)), True, True, 0)
+    close_button = Gtk.Button(None, image=Gtk.Image(stock=Gtk.STOCK_CLOSE))
+    close_button.set_relief(Gtk.ReliefStyle.NONE)
+    def close_tab(a, b):
+        notebook.remove_page(notebook.page_num(pane))
+    close_button.connect("clicked", close_tab, None)
+    label.pack_start(close_button, True, True, 0)
+    label.show_all()
+    notebook.append_page(pane, label)
     notebook.show_all()
     notebook.set_current_page(notebook.page_num(pane))
     notebook.show_all()
-    threading.Thread(target=setup_nvim, args=(id,)).start()
+    threading.Thread(target=setup_nvim, args=(id,language), daemon=True).start()
 
-add_button.connect("clicked", add_pane, None)
+menu = Gtk.Menu()
+python_item = Gtk.MenuItem("python")
+python_item.connect("activate", add_pane, None)
+julia_item = Gtk.MenuItem("julia")
+julia_item.connect("activate", add_pane, None)
+menu.append(python_item)
+menu.append(julia_item)
+python_item.show()
+julia_item.show()
+def add_button_pressed(widget, event):
+    menu.show_all();
+    menu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+add_button.connect("clicked", add_button_pressed, None)
 
 win.add(notebook)
 win.show_all()
 
-add_pane(None, None)
 def resize(a, b, c):
     for child in notebook.get_children():
         child.set_position(win.get_size().height * 2 / 3)
 win.connect("visibility-notify-event", resize, None)
+
+# hack because it won't show the header bar if there is no page
+notebook.append_page(Gtk.Label(""), Gtk.Label(""))
+notebook.show_all()
+notebook.remove_page(0)
+
+# http://stackoverflow.com/questions/16410852/keyboard-interrupt-with-with-python-gtk
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 Gtk.main()

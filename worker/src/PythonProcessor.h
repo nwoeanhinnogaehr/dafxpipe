@@ -1,17 +1,17 @@
 #pragma once
 
-#include "Processor.h"
+#include "BufferedProcessor.h"
 #include <boost/python/numpy.hpp>
 #include <mutex>
 
 namespace py = boost::python;
 namespace np = boost::python::numpy;
 
-class PythonProcessor : public Processor
+class PythonProcessor : public BufferedProcessor
 {
   public:
     PythonProcessor(int port, char *argv0);
-    virtual void process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
+    virtual void process(size_t numInChannels, size_t numOutChannels, size_t frameSize, float** inBufs,
                          float** outBufs) override;
     virtual void init() override;
     virtual void exec(std::string code) override;

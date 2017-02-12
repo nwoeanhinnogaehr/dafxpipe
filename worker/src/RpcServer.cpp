@@ -35,6 +35,12 @@ class WorkerImpl : public Worker::Service
         proc->silence();
         return grpc::Status::OK;
     }
+    grpc::Status ClearBuffer(grpc::ServerContext*, const Empty*, Empty*) override
+    {
+        DBG_PRINT("ClearBuffer");
+        proc->clearBuffer();
+        return grpc::Status::OK;
+    }
     grpc::Status SetNumInputs(grpc::ServerContext*, const NumChannels* req, Empty*) override
     {
         DBG_PRINT("Num inputs = " << req->num());

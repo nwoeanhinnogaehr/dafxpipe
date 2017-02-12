@@ -4,6 +4,7 @@ service Worker {
     rpc SetupAPI(Empty) returns (Empty) {}
     rpc Exec(Code) returns (Empty) {}
     rpc Silence(Empty) returns (Empty) {}
+    rpc ClearBuffer(Empty) returns (Empty) {}
     rpc SetNumInputs(NumChannels) returns (Empty) {}
     rpc SetNumOutputs(NumChannels) returns (Empty) {}
     rpc GetNumInputs(Empty) returns (NumChannels) {}

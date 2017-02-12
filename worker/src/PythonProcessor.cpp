@@ -25,8 +25,71 @@ struct AcquireGIL
 };
 
 PythonProcessor::PythonProcessor(int port, char* argv0)
-  : port(port)
+  : BufferedProcessor()
+  , port(port)
 {
+    // spawn processing thread
+    std::thread([&]() {
+        Frame frame;
+
+        while (true) {
+            // wait for a frame of audio
+            inBuffer.wait_dequeue(frame);
+
+            langThreadExec([&]() {
+                AcquireGIL gil;
+                if (!((py::dict)mainNamespace).has_key("process")) {
+                    outBuffer.try_enqueue(Frame(
+                      std::vector<float>(frame.size * frame.numOutChannels, 0),
+                      frame.numInChannels, frame.numOutChannels, frame.size));
+                    return;
+                }
+
+                // alloc & copy data in
+                float* inData = new float[frame.numInChannels * frame.size];
+                float* outData = new float[frame.numOutChannels * frame.size];
+                std::copy(frame.data.begin(), frame.data.end(), inData);
+
+                try {
+                    // make ndarrays
+                    np::ndarray pyInput = np::from_data(
+                      inData, np::dtype::get_builtin<float>(),
+                      py::make_tuple(frame.numInChannels, frame.size),
+                      py::make_tuple(sizeof(float) * frame.size, sizeof(float)),
+                      py::object());
+                    np::ndarray pyOutput = np::from_data(
+                      outData, np::dtype::get_builtin<float>(),
+                      py::make_tuple(frame.numOutChannels, frame.size),
+                      py::make_tuple(sizeof(float) * frame.size, sizeof(float)),
+                      py::object());
+
+                    // do processing
+                    py::object processFn = mainNamespace["process"];
+                    processFn(pyInput, pyOutput);
+
+                    // save known working config
+                    saveNamespace();
+                } catch (py::error_already_set const&) {
+                    std::cerr << "Python process error:" << std::endl;
+                    PyErr_Print();
+                    restoreNamespace();
+                }
+
+                if (!outBuffer.try_enqueue(Frame(
+                      std::vector<float>(
+                        outData, outData + frame.size * frame.numOutChannels),
+                      frame.numInChannels, frame.numOutChannels, frame.size))) {
+                    std::cerr << "WARNING: No space for frame on output queue!"
+                              << std::endl;
+                }
+
+                // copy data out & clean up
+                delete[] inData;
+                delete[] outData;
+            }).wait();
+        }
+    }).detach();
+
     try {
         // set PYTHONPATH for convenience
         char cwd[1024];
@@ -60,97 +123,73 @@ PythonProcessor::PythonProcessor(int port, char* argv0)
 void
 PythonProcessor::init()
 {
-    std::lock_guard<std::mutex> lock(pythonMutex);
-    AcquireGIL gil;
-    try {
-        py::object workerModule = py::import("worker");
-        workerModule.attr("__worker_port") = port;
-        workerModule.attr("init")();
-        mainNamespace["worker"] = workerModule;
-    } catch (py::error_already_set const&) {
-        std::cerr << "Python API init error:" << std::endl;
-        PyErr_Print();
-    }
+    langThreadExec([&]() {
+        AcquireGIL gil;
+        try {
+            py::object workerModule = py::import("worker");
+            workerModule.attr("init")(port);
+            mainNamespace["worker"] = workerModule;
+        } catch (py::error_already_set const&) {
+            std::cerr << "Python API init error:" << std::endl;
+            PyErr_Print();
+        }
+    }).wait();
 }
 
 void
 PythonProcessor::exec(std::string code)
 {
-    std::lock_guard<std::mutex> lock(pythonMutex);
-    AcquireGIL gil;
-    try {
-        py::exec(code.c_str(), mainNamespace);
-        if (!((py::dict)mainNamespace).has_key("process"))
-            DBG_PRINT("No process function defined!");
-    } catch (py::error_already_set const&) {
-        std::cerr << "Python exec error:" << std::endl;
-        PyErr_Print();
-        restoreNamespace();
-    }
+    langThreadExec([&]() {
+        AcquireGIL gil;
+        try {
+            py::exec(code.c_str(), mainNamespace);
+            if (!((py::dict)mainNamespace).has_key("process"))
+                DBG_PRINT("No process function defined!");
+        } catch (py::error_already_set const&) {
+            std::cerr << "Python exec error:" << std::endl;
+            PyErr_Print();
+            restoreNamespace();
+        }
+    }).wait();
 }
 
 void
 PythonProcessor::silence()
 {
-    std::lock_guard<std::mutex> lock(pythonMutex);
-    AcquireGIL gil;
-    if (((py::dict)mainNamespace).has_key("process"))
-        py::api::delitem(mainNamespace, "process");
+    langThreadExec([&]() {
+        AcquireGIL gil;
+        if (((py::dict)mainNamespace).has_key("process"))
+            py::api::delitem(mainNamespace, "process");
+    }).wait();
 }
 
 void
-PythonProcessor::process(int numInChannels, int numOutChannels, int frameSize, float** inBufs,
-                         float** outBufs)
+PythonProcessor::process(size_t numInChannels, size_t numOutChannels,
+                         size_t frameSize, float** inBufs, float** outBufs)
 {
-    // Clear possibly uninitialized output buffer
-    for (int i = 0; i < numOutChannels; i++)
+    // clear possibly uninitialized output
+    for (size_t i = 0; i < numOutChannels; i++)
         std::fill(outBufs[i], outBufs[i] + frameSize, 0);
 
-    // Don't process during exec
-    if (!pythonMutex.try_lock())
-        return;
+    // enqueue input data for processing
+    std::vector<float> dry(frameSize * numInChannels);
+    for (size_t j = 0; j < frameSize; j++)
+        for (size_t i = 0; i < numInChannels; i++)
+            dry[j + i * frameSize] = inBufs[i][j];
+    if (!inBuffer.try_enqueue(
+          Frame(dry, numInChannels, numOutChannels, frameSize)))
+        std::cerr << "WARNING: No space for frame on input queue!" << std::endl;
 
-    AcquireGIL gil;
-
-    if (!((py::dict)mainNamespace).has_key("process")) {
-        pythonMutex.unlock();
-        return;
-    }
-
-    // alloc & copy data in
-    float* inData = new float[numInChannels * frameSize];
-    float* outData = new float[numOutChannels * frameSize];
-    for (int i = 0; i < numInChannels; i++)
-        std::copy(inBufs[i], inBufs[i] + frameSize, inData + i * frameSize);
-
-    try {
-        // make ndarrays
-        np::ndarray pyInput =
-          np::from_data(inData, np::dtype::get_builtin<float>(), py::make_tuple(numInChannels, frameSize),
-                        py::make_tuple(sizeof(float) * frameSize, sizeof(float)), py::object());
-        np::ndarray pyOutput =
-          np::from_data(outData, np::dtype::get_builtin<float>(), py::make_tuple(numOutChannels, frameSize),
-                        py::make_tuple(sizeof(float) * frameSize, sizeof(float)), py::object());
-
-        // do processing
-        py::object processFn = mainNamespace["process"];
-        processFn(pyInput, pyOutput);
-
-        // save known working config
-        saveNamespace();
-    } catch (py::error_already_set const&) {
-        std::cerr << "Python process error:" << std::endl;
-        PyErr_Print();
-        restoreNamespace();
-    }
-
-    // copy data out & clean up
-    for (int i = 0; i < numOutChannels; i++)
-        std::copy(outData + i * frameSize, outData + (i + 1) * frameSize, outBufs[i]);
-    delete[] inData;
-    delete[] outData;
-
-    pythonMutex.unlock();
+    // pop processed output data, if any
+    Frame wet;
+    if (outBuffer.try_dequeue(wet) && wet.size == frameSize &&
+        wet.numInChannels == numInChannels &&
+        wet.numOutChannels == numOutChannels) {
+        for (size_t j = 0; j < frameSize; j++)
+            for (size_t i = 0; i < numOutChannels; i++)
+                outBufs[i][j] = wet.data[j + i * frameSize];
+    } else
+        std::cerr << "Buffer underrun!" << std::endl;
 }
 
 void
