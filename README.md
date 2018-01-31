@@ -1,3 +1,5 @@
+2018 update: it's stupidly hard to get this to build and run right now because dependencies broke things and I was depending on a weird mode of operating gRPC which is no longer supported. I'm hoping to fix it up within the next little while!
+
 # what is this?
 
 Software for live coding audio effects and synths in Python and/or Julia. (again)
