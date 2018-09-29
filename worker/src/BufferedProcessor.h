@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+#include <functional>
 
 class BufferedProcessor : public Processor
 {

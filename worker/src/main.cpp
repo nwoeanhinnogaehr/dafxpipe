@@ -1,7 +1,6 @@
 #include "JackClient.h"
 #include "RpcServer.h"
 #include "PythonProcessor.h"
-#include "JuliaProcessor.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -20,8 +19,6 @@ main(int argc, char** argv)
     Processor *proc;
     if (language == "python")
         proc = new PythonProcessor(port, argv[0]);
-    else if (language == "julia")
-        proc = new JuliaProcessor();
     else {
         std::cout << "Unsupported language. Currently supported: python, julia.\n";
         return 0;

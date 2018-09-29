@@ -1,5 +1,4 @@
 import numpy as np
-import worker
 
 def to_polar(x):
     """
@@ -33,7 +32,7 @@ class PhaseVocoder:
         self.last_phase = np.zeros(self.shape)
         self.sum_phase = np.zeros(self.shape)
         self.frame_size = self.shape[1]
-        self.freq_per_bin = worker.getSampleRate() / self.frame_size / 2.0
+        self.freq_per_bin = 44100 / self.frame_size / 2.0
         self.step_size = self.frame_size * self.hop
         self.expect = 2.0 * np.pi * self.hop
         self.bins = np.arange(self.frame_size)

@@ -1,6 +1,5 @@
 import numpy as np
 from queuebuffer import QueueBuffer
-import worker
 
 class STFT:
     def __init__(self, size, channels, overlap):
@@ -8,7 +7,7 @@ class STFT:
         self.channels = channels
         self.overlap = overlap
         self.hop = self.size // overlap
-        bufSize = max(size, worker.getBufferSize() * 2)
+        bufSize = max(size, 4096 * 2)
         self.inq = QueueBuffer((channels, bufSize), np.float32, 1)
         self.outq = QueueBuffer((channels, bufSize), np.float32, 1)
         self.window = np.sqrt(np.hanning(size))

@@ -1,11 +1,12 @@
 import grpc
-from worker_pb2 import *
+#from worker_pb2 import *
 import threading
 
 def init(port):
-    global worker
-    channel = grpc.insecure_channel('localhost:' + str(port))
-    worker = WorkerStub(channel)
+    pass
+#    global worker
+#    channel = grpc.insecure_channel('localhost:' + str(port))
+#    worker = WorkerStub(channel)
 
 # we start this on a thread as a deadlock workaround
 # because calling this method goes C++ -> Python -> C++ -> Python

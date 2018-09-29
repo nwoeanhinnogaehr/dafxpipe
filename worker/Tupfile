@@ -2,19 +2,15 @@ include_rules
 
 EXE = worker
 
-JULIA-CONFIG = /usr/share/julia/julia-config.jl
-
 LDFLAGS += `python3-config --ldflags`
 LDFLAGS += -ljackcpp -ljack
 LDFLAGS += `pkg-config --libs grpc++ grpc` -lprotobuf
-LDFLAGS += -lboost_python3 -lboost_numpy
-LDFLAGS += `$(JULIA-CONFIG) --ldflags --ldlibs`
+LDFLAGS += -lboost_python3 -lboost_numpy3
 LDFLAGS += -g -std=c++11 -O2
 
 CXXFLAGS += `python3-config --includes`
 CXXFLAGS += -g -std=c++11 -O2
 CXXFLAGS += -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter
-CXXFLAGS += `$(JULIA-CONFIG) --cflags | sed -e 's/\\\//g'`
 
 : foreach src/*.proto |> \
     protoc -I src --grpc_out=src --cpp_out=src --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` %f |> \

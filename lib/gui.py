@@ -10,7 +10,8 @@ from neovim import attach
 import threading
 import time
 import grpc
-import lib.worker_pb2 as worker_pb2
+import worker_pb2_grpc
+import worker_pb2
 
 win = Gtk.Window()
 win.connect('delete-event', Gtk.main_quit)
@@ -82,7 +83,7 @@ def setup_nvim(id,language):
     nvim.command('noremap <F11> :call rpcnotify(%d, "clearBuffer")<CR>' % nvim.channel_id)
     nvim.command('inoremap <F11> <Esc>:call rpcnotify(%d, "clearBuffer")<CR>a' % nvim.channel_id)
     channel = grpc.insecure_channel('localhost:' + str(9000 + id))
-    stub = worker_pb2.WorkerStub(channel)
+    stub = worker_pb2_grpc.WorkerStub(channel)
     stub.SetupAPI(worker_pb2.Empty())
     try:
         while True:
