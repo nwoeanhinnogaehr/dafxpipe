@@ -99,8 +99,8 @@ def setup_nvim(id,language):
     except:
         pass
 
-def add_pane(item, a, b=None):
-    language = item.get_label()
+def add_pane():
+    language = "python"
     id = notebook.get_n_pages()
     id = num_panes
     pane = make_pane(language)
@@ -119,18 +119,8 @@ def add_pane(item, a, b=None):
     notebook.show_all()
     threading.Thread(target=setup_nvim, args=(id,language), daemon=True).start()
 
-menu = Gtk.Menu()
-python_item = Gtk.MenuItem("python")
-python_item.connect("activate", add_pane, None)
-julia_item = Gtk.MenuItem("julia")
-julia_item.connect("activate", add_pane, None)
-menu.append(python_item)
-menu.append(julia_item)
-python_item.show()
-julia_item.show()
 def add_button_pressed(widget, event):
-    menu.show_all();
-    menu.popup(None, None, None, None, 0, Gtk.get_current_event_time())
+    add_pane()
 add_button.connect("clicked", add_button_pressed, None)
 
 win.add(notebook)
