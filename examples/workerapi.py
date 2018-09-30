@@ -1,7 +1,0 @@
-worker.silence()
-worker.setNumInputs(4)
-worker.setNumOutputs(4)
-print(worker.getNumInputs())
-print(worker.getNumOutputs())
-print(worker.getSampleRate())
-print(worker.getBufferSize())

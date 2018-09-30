@@ -1,5 +1,4 @@
 import numpy as np
-worker.setNumInputs(0)
 
 time = 0
 

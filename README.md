@@ -1,8 +1,8 @@
 # what is this?
 
-Software for live coding audio effects and synths in Python and/or Julia. (again)
+Software for live coding audio effects and synths in Python.
 
-If you use Python, there's also some libraries for doing STFT and phase vocoder stuff. Take a look at the [examples](examples/) for more info.
+There's also some libraries for doing STFT and phase vocoder stuff. Take a look at the [examples](examples/) for more info.
 
 There's a GUI! After building (see below), run it with `python3 lib/gui.py`.
 
