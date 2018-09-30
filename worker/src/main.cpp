@@ -20,7 +20,7 @@ main(int argc, char** argv)
     if (language == "python")
         proc = new PythonProcessor(port, argv[0]);
     else {
-        std::cout << "Unsupported language. Currently supported: python, julia.\n";
+        std::cout << "Unsupported language. Currently supported: python.\n";
         return 0;
     }
     JackClient jack(proc, port);
